@@ -1,4 +1,3 @@
-
 /**
  *    Json libarary (jlib) used to create and read JSON messages in an eay way.
  *    Copyright (C) 2021  Georg Schmitz

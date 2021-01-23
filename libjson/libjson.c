@@ -69,8 +69,11 @@ int main(void)
 
 	printf("[LJS_MAIN] ljs start\n");
 	my_json = ljs_init();
+	ljs_add_string(my_json,"person:ljsType_object/firstname:ljsType_string","Georg");
+	ljs_print(my_json,ljsFormat_pretty);
+	ljs_free(my_json);
 
-
+/*
 	//ljs_add_bool(my_json,"lamp:ljsType_bool",1);
 
 	//bool lamp=0;
