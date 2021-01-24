@@ -19,3 +19,4 @@ extern void ljs_print_start(void);
 extern void ljs_print_end(void);
 extern void ljs_print_element(ljs * js,ljsFormat format);
 extern void ljs_print_pointers(ljs * js);
+extern char  * ljs_print_malloc_element(ljs *js);

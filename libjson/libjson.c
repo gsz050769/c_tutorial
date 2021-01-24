@@ -69,8 +69,18 @@ int main(void)
 
 	printf("[LJS_MAIN] ljs start\n");
 	my_json = ljs_init();
-	ljs_add_string(my_json,"person:ljsType_object/firstname:ljsType_string","Georg");
+	//ljs_add_string(my_json,"person:ljsType_object/firstname:ljsType_string","Georg");
+	ljs_add_string(my_json,"123:ljsType_string","1234");
+	ljs_add_string(my_json,"321:ljsType_string","1234");
+	ljs_add_string(my_json,"5560:ljsType_object/111:ljsType_string","1234");
+	ljs_add_null(my_json,"431:ljsType_null");
 	ljs_print(my_json,ljsFormat_pretty);
+	char * out=ljs_print_malloc(my_json);
+	printf("[LJS_MAIN] ljs out=%s\n",out);
+	if (out)
+	{
+		free(out);
+	}
 	ljs_free(my_json);
 
 /*
@@ -96,7 +106,7 @@ int main(void)
 	ljs_print_pointers(my_json);
 	ljs_print(my_json,ljsFormat_pretty);
 	ljs_free(my_json);
-/*
+
 	ljs_add_string(my_json,"person:ljsType_object/Konto:ljsType_object/IBAN:ljsType_string","DE12 4020 0003 2205 02");
 	ljs_add_number(my_json,"person:ljsType_object/Konto:ljsType_object/Saldo:ljsType_number",5000.66);
 
@@ -142,7 +152,7 @@ ljs * ljs_init(void)
 	{
 		ljsRet->type=ljsType_root;
 		ljsRet->child=NULL;
-		printf("[LJS] ljs instance %p created\n",ljsRet);
+		printf("[LJS] %s %p \n",__FUNCTION__,ljsRet);
 		return ljsRet;
 	}
 	return NULL;
@@ -181,7 +191,6 @@ int ljs_add_bool(ljs *js, char * qualifier, bool val)
 {
 	if(js)
 	{
-          printf("[LJS] %s %p bool=%d\n",__FUNCTION__,js,val);
 	  return (ljs_write(js,qualifier,(void*) (&val)) );
 	}
 	return -1;
@@ -196,7 +205,6 @@ int ljs_add_null(ljs *js, char * qualifier)
 {
 	if(js)
 	{
-          printf("[LJS] %s %p \n",__FUNCTION__,js);
 	  return (ljs_write(js,qualifier,NULL) );
 	}
 	return -1;
@@ -211,7 +219,6 @@ int ljs_add_string(ljs *js, char * qualifier, char *  val)
 {
 	if(js)
 	{
-         printf("[LJS] %s %p string=%s\n",__FUNCTION__,js,val);
 	  return (ljs_write(js,qualifier,(char*)val) );
 	}
 	return -1;
@@ -226,7 +233,6 @@ int ljs_add_number(ljs *js, char * qualifier, double val)
 {
 	if(js)
 	{
-          printf("[LJS] %s %p number=%f\n",__FUNCTION__,js,val);
 	  return (ljs_write(js,qualifier,(void*) (&val)) );
 	}
 	return -1;
@@ -260,20 +266,6 @@ int ljs_add_array(ljs *js, char * qualifier, ljs* jsAdd)
 	}
 	return -1; 
 }
-
-/**
-    print ljs object
-    @param	pointer to ljs the object where element is inserted
-    @return	0 = ok, -1 = error
-*/
-char * ljs_print(ljs * js, ljsFormat format)
-{
-	ljs_print_start();
-	ljs_print_element(js,format);
-	ljs_print_end();
-	return NULL;
-}
-
 
 /**
     ...
@@ -369,17 +361,12 @@ ljs *  ljs_read_get_ref(ljs * js, char * qualifier)
 
 ljsType ljs_read_get_parent_type(ljs *js)
 {
-	
-	printf("[LJS_WRITE] %s parent check of %p is parent an array\n",__FUNCTION__,js);
-	
 	while(js)
 	{
 		if (js->type==ljsType_root)
 		{
-			printf("[LJS_WRITE] %s root %p\n",__FUNCTION__,js);
 			if(js->prev)
 			{
-				printf("[LJS_WRITE] %s data type=%d\n",__FUNCTION__,js->prev->type);
 				return js->prev->type;
 			}
 		}
@@ -388,3 +375,35 @@ ljsType ljs_read_get_parent_type(ljs *js)
 	return 0;
 }
 
+ljsType ljs_read_type(ljs *js)
+{
+	while(js)
+	{
+		return js->type;
+	}
+	return 0;
+}
+
+
+/**
+    print ljs object
+    @param	pointer to ljs the object where element is inserted
+    @return	0 = ok, -1 = error
+*/
+char * ljs_print(ljs * js, ljsFormat format)
+{
+	ljs_print_start();
+	ljs_print_element(js,format);
+	ljs_print_end();
+	return NULL;
+}
+
+/**
+    
+    @param	pointer to ljs the object where element is inserted
+    @return	
+*/
+char * ljs_print_malloc(ljs *js)
+{
+	return ljs_print_malloc_element(js);
+}

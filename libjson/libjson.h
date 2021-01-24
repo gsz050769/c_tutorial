@@ -86,10 +86,11 @@ extern int  ljs_read_object(ljs * js, char * qualifier, ljs ** res);
 // get pointer to any object type:
 extern ljs* ljs_read_get_ref(ljs * js, char * qualifier);
 extern ljsType ljs_read_get_parent_type(ljs *js);
+extern ljsType ljs_read_type(ljs *js);
 
 
 // *******************************************************
 // Generate output from json object
 // *******************************************************
 extern char * ljs_print(ljs * js, ljsFormat format);
-
+extern char * ljs_print_malloc(ljs *js);

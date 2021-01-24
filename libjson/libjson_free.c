@@ -29,25 +29,21 @@
 int ljs_free_object(ljs *js, bool start)
 {
 	ljs * js_next=NULL;
-	printf("[LJS] free start %p \n",js);
+
 	while (js!=NULL)
 	{
-		printf("[LJS_FREE] ljs while loop %p \n",js);
+		printf("[LJS] %s %p \n",__FUNCTION__,js);
 		if (js->child!=NULL)
 		{
-			printf("[LJS_FREE] ljs free recursive %p js->key\n",js->child);
 			ljs_free_object(js->child,0);
 		}
 		
-		printf("[LJS_FREE] ljs free instance %p \n",js);
 		if(js->key!=NULL)
 		{
-			printf("[LJS_FREE] ljs free key %s p=%p\n",js->key,js->key);
 			free(js->key);
 		}
 		if(js->strVal!=NULL)
 		{
-			printf("[LJS_FREE] ljs free strval %s p=%p\n",js->strVal,js->strVal);
 			free(js->strVal);
 		}
 		js_next=js->next;
@@ -59,9 +55,6 @@ int ljs_free_object(ljs *js, bool start)
 		{
 			start=0;
 		}
-		printf("[LJS_FREE] js %p next %p start %d\n",js,js->next,start);
-
-		printf("[LJS_FREE] ljs free object %p \n",js);
 		free(js);
 
 		js=NULL;

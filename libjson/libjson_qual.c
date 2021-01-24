@@ -35,7 +35,7 @@ static char * pointerStart=NULL;
 static char * pointerRead=NULL;
 static int    length=0;
 
-static char qualString[200];
+static char qualString[200]; // max size of qualifier string
 int ljs_qual_get_next(char* qual, ljsQualTuple * retTuple)
 {
 	// example "dm:ljsType_object/mac:ljsType_string"
