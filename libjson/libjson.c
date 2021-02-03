@@ -47,6 +47,7 @@
 #include <unistd.h>
 #include <stdbool.h> 
 #include <stdlib.h> 
+#include <string.h>
 
 #include "libjson.h"
 #include "libjson_qual.h"
@@ -54,6 +55,7 @@
 #include "libjson_print.h"
 #include "libjson_free.h"
 #include "libjson_read.h"
+#include "libjson_parse.h"
 
 
 /**
@@ -67,75 +69,36 @@ int main(void)
 
 	printf("\n");
 
-	printf("[LJS_MAIN] ljs start\n");
+	printf("[LJS] ljs start\n");
+
+	// ###############################################################
+	// -1- example create json object: {"obj":{"arr":[null,"hallo"]}}
+	//     using qualifier "obj:ljsTy ...
 	my_json = ljs_init();
-	//ljs_add_string(my_json,"person:ljsType_object/firstname:ljsType_string","Georg");
-	ljs_add_string(my_json,"123:ljsType_string","1234");
-	ljs_add_string(my_json,"321:ljsType_string","1234");
-	ljs_add_string(my_json,"5560:ljsType_object/111:ljsType_string","1234");
-	ljs_add_null(my_json,"431:ljsType_null");
-	ljs_print(my_json,ljsFormat_pretty);
+	ljs_add_string(my_json,"obj:ljsType_object/arr:ljsType_array/-1:ljsType_string","hallo");
+	// print to console:
+	ljs_print(my_json,ljsFormat_pretty);  
+	// create string from json object 
 	char * out=ljs_print_malloc(my_json);
-	printf("[LJS_MAIN] ljs out=%s\n",out);
+	printf("[LJS] ljs json=%s\n",out);
 	if (out)
 	{
-		free(out);
+		free (out);  // user is needs to take care for memeory free
+	}
+	// free json root object
+	ljs_free(my_json);
+	
+
+	// ###############################################################
+	// -1- example create json object: from string, and access array index 1
+	my_json=ljs_parse_from_string("{\"name\":\"donald\",\"address\":[\"Victotry street\",5,null]}");
+	double street_number=0;
+	ljs_print(my_json,ljsFormat_pretty);  
+	if (0==ljs_read_number(my_json,"address:ljsType_array/1:ljsType_number",&street_number))
+	{
+		printf("[LJS] Street number = %d\n",(int)street_number);
 	}
 	ljs_free(my_json);
-
-/*
-	//ljs_add_bool(my_json,"lamp:ljsType_bool",1);
-
-	//bool lamp=0;
-	//ljs_read_bool(my_json, "lamp:ljsType_bool", &lamp);
-	//printf("[LJS_MAIN] lamp is %s\n",lamp?"on":"off");
-
-	//ljs_print(my_json,ljsFormat_pretty);
-	//ljs_add_bool(my_json,"lamp:ljsType_bool",0);
-	//ljs_add_bool(my_json,"ringer:ljsType_bool",0);
-	//ljs_print(my_json,ljsFormat_pretty);
-	//ljs_add_bool(my_json,"ringer:ljsType_bool",1);
-	//ljs_add_string(my_json,"street:ljsType_string","Reeperbahn");
-	//ljs_add_null(my_json,"street:ljsType_null");
-	//ljs_print(my_json,ljsFormat_pretty);
-
-	//ljs_add_object(my_json,"person:ljsType_object",NULL);
-	//ljs_add_string(my_json,"person:ljsType_object/firstname:ljsType_string","Georg");
-	//ljs_add_string(my_json,"person:ljsType_object/name:ljsType_string","Schmitz");
-	ljs_add_string(my_json,"person:ljsType_object/Adresse:ljsType_object/Strasse:ljsType_string","Ebertsrasse");
-	ljs_print_pointers(my_json);
-	ljs_print(my_json,ljsFormat_pretty);
-	ljs_free(my_json);
-
-	ljs_add_string(my_json,"person:ljsType_object/Konto:ljsType_object/IBAN:ljsType_string","DE12 4020 0003 2205 02");
-	ljs_add_number(my_json,"person:ljsType_object/Konto:ljsType_object/Saldo:ljsType_number",5000.66);
-
-	char *street=NULL;
-	ljs_read_string(my_json, "person:ljsType_object/Adresse:ljsType_object/Strasse:ljsType_string",&street);
-	printf("[LJS_MAIN] street=%s\n",street?street:"--");
-
-	ljs_print(my_json,ljsFormat_pretty);
-
-	ljs* address=NULL;
-	ljs_read_object(my_json, "person:ljsType_object/Adresse:ljsType_object",&address);
-	ljs_print(address,ljsFormat_pretty);	
-
-
-	ljs * Konto=NULL;
-	ljs_read_object(my_json, "person:ljsType_object/Konto:ljsType_object",&Konto);
-	ljs_print(Konto,ljsFormat_pretty);
-
-	ljs_free(Konto);
-
-	//ljs_print_pointers(my_json);
-	ljs_print(my_json,ljsFormat_pretty);
-
-
-
-	ljs_free(my_json);
-*/
-
-
 	return 0;
 }
 
@@ -150,9 +113,11 @@ ljs * ljs_init(void)
 	ljsRet = malloc(sizeof(ljs));
 	if(ljsRet!=NULL)
 	{
+		memset(ljsRet,0,sizeof(ljs));
 		ljsRet->type=ljsType_root;
 		ljsRet->child=NULL;
-		printf("[LJS] %s %p \n",__FUNCTION__,ljsRet);
+		ljsRet->next=NULL;
+		//printf("[LJS] %s %p \n",__FUNCTION__,ljsRet);
 		return ljsRet;
 	}
 	return NULL;
@@ -281,7 +246,7 @@ int   ljs_read_bool(ljs * js, char * qualifier, bool * result)
 		res=ljs_read(js,qualifier, (void**) &tmp);
 		*result=*tmp;
 	}
-	return -1;
+	return res;
 }
 
 /**
@@ -328,7 +293,7 @@ int ljs_read_number(ljs * js, char * qualifier, double * result)
 		res=ljs_read(js,qualifier, (void**) &tmp);
 		*result=*tmp;
 	}
-	return -1;
+	return res;
 }
 
 /**
@@ -337,6 +302,20 @@ int ljs_read_number(ljs * js, char * qualifier, double * result)
     @return	...
 */
 int  ljs_read_object(ljs * js, char * qualifier, ljs ** result)
+{
+	if(js)
+	{
+		return (ljs_read(js,qualifier, (void**) result));
+	}
+	return -1;
+}
+
+/**
+    ...
+    @param	...
+    @return	...
+*/
+int  ljs_read_array(ljs * js, char * qualifier, ljs ** result)
 {
 	if(js)
 	{
@@ -361,6 +340,7 @@ ljs *  ljs_read_get_ref(ljs * js, char * qualifier)
 
 ljsType ljs_read_get_parent_type(ljs *js)
 {
+	//printf("[LJS] %s %p \n",__FUNCTION__,js);
 	while(js)
 	{
 		if (js->type==ljsType_root)
@@ -372,7 +352,7 @@ ljsType ljs_read_get_parent_type(ljs *js)
 		}
 		js=js->prev;
 	}
-	return 0;
+	return ljsType_invalid;
 }
 
 ljsType ljs_read_type(ljs *js)
@@ -381,7 +361,26 @@ ljsType ljs_read_type(ljs *js)
 	{
 		return js->type;
 	}
-	return 0;
+	return ljsType_invalid;
+}
+
+ljs * ljs_read_get_parent(ljs *js)
+{
+	ljsType js_type;
+	//printf("[LJS] %s start %p \n",__FUNCTION__,js);
+	while(js)
+	{
+		js_type=js->type;
+		if (js_type==ljsType_root) //js->type==ljsType_root) //js->type==ljsType_root)
+		{
+			if(js->prev)
+			{
+				return js->prev;
+			}
+		}
+		js=js->prev;
+	}
+	return NULL;
 }
 
 

@@ -49,9 +49,8 @@
 //	}
 //
 //	ToDo:
-//		- Array support :-(
-//		- Provide json object as a string
-//		- Parse into json object from string
-//		
+//		- extensive testing 
+//      - make it a libarary 
+//		- error fixing second example main 
 	
 

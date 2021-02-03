@@ -24,13 +24,43 @@
 #include <string.h>
 
 #include "libjson.h"
-#include "libjson_write.h"
 #include "libjson_qual.h"
+#include "libjson_write.h"
+#include "libjson_read.h"
+#include "libjson_array.h"
 
-static ljs * ljs_get_element(ljs *js, ljsQualTuple tup)
+char int_buf[20];
+
+static ljs * ljs_write_get_element(ljs *js, ljsQualTuple tup)
 {
-	ljs * lastljs=NULL;
+	ljs * lastljs=ljs_read_last_level_element(js);
+	bool parent_is_array=0;
 
+	//printf("[LJS_WRITE] %s start %p tup.key=%s\n",__FUNCTION__,js,tup.key);
+	if (ljs_read_get_parent_type(js)==ljsType_array)
+	{
+		js=ljs_read_get_parent(js);
+		if(js)
+		{
+			if (NULL!=ljs_array_get_index(js, atoi(tup.key)))
+			{
+				return ljs_array_get_index(js, atoi(tup.key));
+			}
+			else
+			{
+				if (NULL!=(js=ljs_array_create_index_of_null(js, atoi(tup.key))))
+				{
+					js->type=tup.jstype;
+					return js;
+				}
+				else
+				{
+					return NULL;
+				}
+			}
+			
+		}
+	}
 	while(js)
 	{
 		lastljs=js;
@@ -50,7 +80,7 @@ static ljs * ljs_get_element(ljs *js, ljsQualTuple tup)
 		lastljs->next=js;
 		js->prev=lastljs;
 		js->type=tup.jstype;
-                js->key=malloc(strlen(tup.key)+1);
+        js->key=malloc(strlen(tup.key)+1);
 		strcpy(js->key,tup.key);
 		return js;
 	}
@@ -70,7 +100,7 @@ int ljs_write(ljs *js, char* qual, void* val)
 	{
 		do
 		{
-			if(NULL!=(ljs_my=ljs_get_element(ljs_my,jstuple))) // get element (created if not available)
+			if(NULL!=(ljs_my=ljs_write_get_element(ljs_my,jstuple))) // get element (created if not available)
 			{
 				// set value depeding on jason object type
 				switch(jstuple.jstype)

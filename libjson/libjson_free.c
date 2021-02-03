@@ -32,7 +32,7 @@ int ljs_free_object(ljs *js, bool start)
 
 	while (js!=NULL)
 	{
-		printf("[LJS] %s %p \n",__FUNCTION__,js);
+		//printf("[LJS] %s %p \n",__FUNCTION__,js);
 		if (js->child!=NULL)
 		{
 			ljs_free_object(js->child,0);
@@ -40,10 +40,12 @@ int ljs_free_object(ljs *js, bool start)
 		
 		if(js->key!=NULL)
 		{
+			//printf("[LJS] %s js->key %p %s \n",__FUNCTION__,js->key,js->key);
 			free(js->key);
 		}
 		if(js->strVal!=NULL)
 		{
+			//printf("[LJS] %s js->strVal %p %s \n",__FUNCTION__,js->strVal,js->strVal);
 			free(js->strVal);
 		}
 		js_next=js->next;

@@ -22,12 +22,13 @@
 typedef enum ljsType
 {
 	ljsType_root,
-        ljsType_object,
+    ljsType_object,
 	ljsType_array,
 	ljsType_null,
-        ljsType_bool,
-        ljsType_string,
-        ljsType_number
+    ljsType_bool,
+    ljsType_string,
+    ljsType_number,
+	ljsType_invalid
 } ljsType;
 
 // *******************************************************
@@ -82,11 +83,14 @@ extern int  ljs_read_null(ljs * js, char * qualifier);
 extern int  ljs_read_string(ljs * js, char * qualifier, char ** res);
 extern int  ljs_read_number(ljs * js, char * qualifier, double * res);
 extern int  ljs_read_double(ljs * js, char * qualifier, double * res);
-extern int  ljs_read_object(ljs * js, char * qualifier, ljs ** res);
+extern int  ljs_read_object(ljs * js, char * qualifier, ljs ** res);  // first child (root element) of object
+extern int  ljs_read_array(ljs * js, char * qualifier, ljs ** res);   // first child(root element) of array
 // get pointer to any object type:
 extern ljs* ljs_read_get_ref(ljs * js, char * qualifier);
+extern ljs* ljs_read_get_parent(ljs *js);
 extern ljsType ljs_read_get_parent_type(ljs *js);
 extern ljsType ljs_read_type(ljs *js);
+
 
 
 // *******************************************************

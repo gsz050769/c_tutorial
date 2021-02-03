@@ -54,30 +54,67 @@ void ljs_print_end(void)
 void ljs_print_element(ljs * js,ljsFormat format)
 {
 	_format=format;
+	bool is_array=ljs_read_get_parent_type(js)==ljsType_array?1:0;
+	
 	while(js)
 	{
 		switch(js->type)
 		{
 			case ljsType_bool:
 				ljs_print_tab(tab);
-				printf("\"%s\" : %s",js->key,js->boolean?"true":"false");
+				if (!is_array)
+				{
+					printf("\"%s\" : %s",js->key,js->boolean?"true":"false");
+				}
+				else
+				{
+					printf("%s",js->boolean?"true":"false");
+				}
 				break;
 			case ljsType_null:
 				ljs_print_tab(tab);
-				printf("\"%s\" : null",js->key);
+				if (!is_array)
+				{
+					printf("\"%s\" : null",js->key);
+				}
+				else
+				{
+					printf("null");
+				}
 				break;
 			case ljsType_number:
 				ljs_print_tab(tab);
-				printf("\"%s\" : %g",js->key,js->number);
+				if (!is_array)
+				{
+					printf("\"%s\" : %g",js->key,js->number);
+				}
+				else
+				{
+					printf("%g",js->number);
+				}
 				break;
 			case ljsType_string:
 				ljs_print_tab(tab);
-				printf("\"%s\" : \"%s\"",js->key,js->strVal);
+				if (!is_array)
+				{
+					printf("\"%s\" : \"%s\"",js->key,js->strVal);
+				}
+				else
+				{
+					printf("\"%s\"",js->strVal);
+				}
 				break;
 			case ljsType_object:
 			case ljsType_array:
 				ljs_print_tab(tab);
-				printf("\"%s\" : %s\n",js->key,js->type==ljsType_object?"{":"[");
+				if (!is_array)
+				{
+					printf("\"%s\" : %s\n",js->key,js->type==ljsType_object?"{":"[");
+				}
+				else
+				{
+					printf("%s\n",js->type==ljsType_object?"{":"[");
+				}
 				tab++;
 				ljs_print_element(js->child,format);
 				tab--;
@@ -103,7 +140,7 @@ void ljs_print_pointers(ljs * js)
 {
 	while(js)
 	{
-		printf("%p\n",js);
+		printf("%p type=%d\n",js,js->type);
 		if(js->child)
 		{
 			printf("->\n");
@@ -137,7 +174,6 @@ unsigned long js_print_sizeof(ljs* js,bool start)
 				break;
 			case ljsType_string:
 				size+=((js->strVal!=NULL)?strlen(js->strVal):0)+2;
-				printf("[LJS]js_print_sizeof size=%lu\n",size);
 				break;
 			case ljsType_object:
 			case ljsType_array:
