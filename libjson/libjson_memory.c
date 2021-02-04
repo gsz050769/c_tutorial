@@ -15,5 +15,32 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-extern ljs * ljs_parse_from_string(char *in);
-bool ljs_parse_ok(int * line, char ** err);
+
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdbool.h> 
+#include <stdlib.h> 
+#include <string.h>
+
+#include "libjson.h"
+#include "libjson_memory.h"
+
+#define _LIBJSON_MEM_DBG_    0
+#if _LIBJSON_MEM_DBG_
+    #define LIBJSON_MEM_DBG(x) x
+#else
+    #define LIBJSON_MEM_DBG(x)
+#endif
+void * libjson_malloc(int size)
+{
+    void * mem=malloc(size);
+    memset(mem,0,size);
+    LIBJSON_MEM_DBG(printf("[LJS_MEM] %s p=%p size=%d\n",__FUNCTION__,mem,size);)
+    return mem;
+}
+void libjson_free(void * mem)
+{
+    LIBJSON_MEM_DBG(printf("[LJS_MEM] %s p=%p\n",__FUNCTION__,mem);)
+    free(mem);
+}

@@ -56,6 +56,7 @@
 #include "libjson_free.h"
 #include "libjson_read.h"
 #include "libjson_parse.h"
+#include "libjson_memory.h"
 
 
 /**
@@ -74,6 +75,8 @@ int main(void)
 	// ###############################################################
 	// -1- example create json object: {"obj":{"arr":[null,"hallo"]}}
 	//     using qualifier "obj:ljsTy ...
+	printf("[LJS] #############################################################\n");
+	printf("[LJS] output example 1:\n");
 	my_json = ljs_init();
 	ljs_add_string(my_json,"obj:ljsType_object/arr:ljsType_array/-1:ljsType_string","hallo");
 	// print to console:
@@ -87,19 +90,47 @@ int main(void)
 	}
 	// free json root object
 	ljs_free(my_json);
-	
 
 	// ###############################################################
-	// -1- example create json object: from string, and access array index 1
-	my_json=ljs_parse_from_string("{\"name\":\"donald\",\"address\":[\"Victotry street\",5,null]}");
-	double street_number=0;
+	// -2- example create json object: from string, and access array index 1
+	printf("[LJS] #############################################################\n");
+	printf("[LJS] output example 2:\n");
+	my_json=ljs_add_parse("{\"name\":\"donald\", d \"address\":[\"Victotry street\",5,null]}");
+	//my_json=ljs_add_parse("{\"name\":\"donald\",\"address\":[\"test\"]}");
+	int idx=0;char *info=NULL;
+	if(!ljs_add_parse_ok(&idx,&info))
+	{
+		printf("[LJS] parse error at idx=%d: %s\n",idx,info);
+	}
+	
 	ljs_print(my_json,ljsFormat_pretty);  
+
+	char * street=0;
+	if (0==ljs_read_string(my_json,"address:ljsType_array/0:ljsType_string",&street))
+	{
+		printf("[LJS] Street = %s\n",street);
+	}
+
+	double street_number=0;
 	if (0==ljs_read_number(my_json,"address:ljsType_array/1:ljsType_number",&street_number))
 	{
-		printf("[LJS] Street number = %d\n",(int)street_number);
+		printf("[LJS] Number = %d\n",(int)street_number);
 	}
+
 	ljs_free(my_json);
 	return 0;
+}
+
+
+static bool ljs_strend(char * str,  char *end)
+{
+    int len_str  = strlen(str);
+    int len_end  = strlen(end); 
+    if (len_str >= len_end)
+    {
+        return (0 == memcmp(end, str + (len_str - len_end), len_end));
+    }
+    return 0;
 }
 
 /**
@@ -110,7 +141,7 @@ int main(void)
 ljs * ljs_init(void)
 {
 	ljs * ljsRet= NULL;
-	ljsRet = malloc(sizeof(ljs));
+	ljsRet = libjson_malloc(sizeof(ljs));
 	if(ljsRet!=NULL)
 	{
 		memset(ljsRet,0,sizeof(ljs));
@@ -142,9 +173,19 @@ int ljs_free(ljs *js)
     @param	pointer to ljs object
     @return	0 = ok, -1 = error
 */
-int ljs_add_parse(ljs * js, char * in)
+ljs* ljs_add_parse(char * in)
 {
-	return -1;
+	return (ljs_parse_from_string(in));
+}
+
+/**
+    parse a json string into ljs structure
+    @param	pointer to ljs object
+    @return	0 = ok, -1 = error
+*/
+bool ljs_add_parse_ok(int * line, char ** err)
+{
+	ljs_parse_ok(line, err);
 }
 
 /**
@@ -154,7 +195,7 @@ int ljs_add_parse(ljs * js, char * in)
 */
 int ljs_add_bool(ljs *js, char * qualifier, bool val)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_bool"))
 	{
 	  return (ljs_write(js,qualifier,(void*) (&val)) );
 	}
@@ -168,7 +209,7 @@ int ljs_add_bool(ljs *js, char * qualifier, bool val)
 */
 int ljs_add_null(ljs *js, char * qualifier)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_null"))
 	{
 	  return (ljs_write(js,qualifier,NULL) );
 	}
@@ -182,7 +223,7 @@ int ljs_add_null(ljs *js, char * qualifier)
 */
 int ljs_add_string(ljs *js, char * qualifier, char *  val)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_string"))
 	{
 	  return (ljs_write(js,qualifier,(char*)val) );
 	}
@@ -196,7 +237,7 @@ int ljs_add_string(ljs *js, char * qualifier, char *  val)
 */
 int ljs_add_number(ljs *js, char * qualifier, double val)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_number"))
 	{
 	  return (ljs_write(js,qualifier,(void*) (&val)) );
 	}
@@ -211,7 +252,7 @@ int ljs_add_number(ljs *js, char * qualifier, double val)
 */
 int ljs_add_object(ljs *js, char * qualifier, ljs* jsAdd)
 {
- 	if(js)
+ 	if((js) && ljs_strend(qualifier,"ljsType_object"))
 	{
 	  return (ljs_write(js,qualifier,(void*) jsAdd) );
 	}
@@ -225,7 +266,7 @@ int ljs_add_object(ljs *js, char * qualifier, ljs* jsAdd)
 */
 int ljs_add_array(ljs *js, char * qualifier, ljs* jsAdd)
 {
- 	if(js)
+ 	if((js) && ljs_strend(qualifier,"ljsType_array"))
 	{
 	  return (ljs_write(js,qualifier,(void*) jsAdd) );
 	}
@@ -241,7 +282,7 @@ int   ljs_read_bool(ljs * js, char * qualifier, bool * result)
 {
 	bool * tmp=NULL;
 	int res=-1;
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_bool"))
 	{
 		res=ljs_read(js,qualifier, (void**) &tmp);
 		*result=*tmp;
@@ -257,7 +298,7 @@ int   ljs_read_bool(ljs * js, char * qualifier, bool * result)
 int  ljs_read_null(ljs * js, char * qualifier)
 {
 	void * tmp=NULL;
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_null"))
 	{
 		return (ljs_read(js,qualifier, &tmp));
 	}
@@ -271,7 +312,7 @@ int  ljs_read_null(ljs * js, char * qualifier)
 */
 int  ljs_read_string(ljs * js, char * qualifier, char ** result)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_string"))
 	{
 		return (ljs_read(js,qualifier, (void**) result));
 	}
@@ -288,7 +329,7 @@ int ljs_read_number(ljs * js, char * qualifier, double * result)
 {
 	double * tmp=NULL;
 	int res=-1;
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_number"))
 	{
 		res=ljs_read(js,qualifier, (void**) &tmp);
 		*result=*tmp;
@@ -303,7 +344,7 @@ int ljs_read_number(ljs * js, char * qualifier, double * result)
 */
 int  ljs_read_object(ljs * js, char * qualifier, ljs ** result)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_object"))
 	{
 		return (ljs_read(js,qualifier, (void**) result));
 	}
@@ -317,7 +358,7 @@ int  ljs_read_object(ljs * js, char * qualifier, ljs ** result)
 */
 int  ljs_read_array(ljs * js, char * qualifier, ljs ** result)
 {
-	if(js)
+	if((js) && ljs_strend(qualifier,"ljsType_array"))
 	{
 		return (ljs_read(js,qualifier, (void**) result));
 	}

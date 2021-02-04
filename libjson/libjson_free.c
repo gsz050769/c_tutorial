@@ -41,12 +41,12 @@ int ljs_free_object(ljs *js, bool start)
 		if(js->key!=NULL)
 		{
 			//printf("[LJS] %s js->key %p %s \n",__FUNCTION__,js->key,js->key);
-			free(js->key);
+			libjson_free(js->key);
 		}
 		if(js->strVal!=NULL)
 		{
 			//printf("[LJS] %s js->strVal %p %s \n",__FUNCTION__,js->strVal,js->strVal);
-			free(js->strVal);
+			libjson_free(js->strVal);
 		}
 		js_next=js->next;
 		if (js->next)
@@ -57,7 +57,7 @@ int ljs_free_object(ljs *js, bool start)
 		{
 			start=0;
 		}
-		free(js);
+		libjson_free(js);
 
 		js=NULL;
 		if (!start)

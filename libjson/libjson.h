@@ -65,7 +65,8 @@ extern int ljs_free(ljs *js);
 // *******************************************************
 // Interface add content to a json object 
 // *******************************************************
-extern int  ljs_add_parse(ljs * js, char * in);
+extern ljs* ljs_add_parse(char * in);
+extern bool ljs_add_parse_ok(int * line, char ** err);
 extern int  ljs_add_bool(ljs *js, char * qualifier, bool val);
 extern int  ljs_add_null(ljs *js, char * qualifier);
 extern int  ljs_add_string(ljs *js, char * qualifier, char *  val);

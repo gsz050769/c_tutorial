@@ -15,5 +15,6 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-extern ljs * ljs_parse_from_string(char *in);
-bool ljs_parse_ok(int * line, char ** err);
+
+extern void * libjson_malloc(int size);
+extern void libjson_free(void * mem);

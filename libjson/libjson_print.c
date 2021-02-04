@@ -25,6 +25,7 @@
 
 #include "libjson.h"
 #include "libjson_print.h"
+#include "libjson_memory.h"
 
 ljsFormat _format=0;
 int tab=0;
@@ -208,7 +209,7 @@ static char  * _ljs_print_malloc_element(ljs *js,bool start)
 	if(start)
 	{
 		size_of_js=js_print_sizeof(js,1)+100;  // +1 for string termination + 99 secrity space
-		ljs_out_buf=malloc(size_of_js);
+		ljs_out_buf=libjson_malloc(size_of_js);
 		ljs_print_write=ljs_out_buf;
 		sprintf(ljs_print_write,"{");
 	}

@@ -27,6 +27,7 @@
 #include "libjson_qual.h"
 #include "libjson_read.h"
 #include "libjson_array.h"
+#include "libjson_memory.h"
 
 ljs * ljs_array_get_index(ljs *array, int idx)
 {
@@ -88,7 +89,7 @@ ljs * ljs_array_create_index_of_null(ljs *array, int idx)
 				array->next=ljs_init();
 				array->next->type=ljsType_null;
 				array->next->prev=array;
-				char *buf=malloc(33);
+				char *buf=libjson_malloc(33);
 				sprintf(buf,"%d",count);
 				array->next->key=buf;
 			}

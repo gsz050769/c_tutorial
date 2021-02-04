@@ -26,6 +26,27 @@
 #include "libjson.h"
 #include "libjson_print.h"
 #include "libjson_array.h"
+#include "libjson_memory.h"
+
+typedef struct ljs_parese_error
+{
+    int  line;
+    char info[100];
+} ljs_parese_error;
+
+ljs_parese_error ljs_parse_err;
+
+static void lsjs_parse_error_set(int line, char * err)
+{
+    if(strlen(err)<=sizeof(ljs_parse_err.info))
+    {
+        if((line<0)  || (ljs_parse_err.line<0))
+        {
+            strcpy(ljs_parse_err.info,err);
+            ljs_parse_err.line=line;
+        }
+    }
+}
 
 typedef enum ljs_parse_state
 {
@@ -48,8 +69,13 @@ static void ljs_parse_init_state(void)
 }
 static void ljs_parse_set_state(ljs_parse_state new_state)
 {
-  state_stack[state_idx]=new_state;
-  //printf("[LJS_PARSE] %s new state = %d\n",__FUNCTION__,new_state);
+    state_stack[state_idx]=new_state;
+    //printf("[LJS_PARSE] %s new state = %d\n",__FUNCTION__,new_state);
+}
+static void ljs_parse_set_error_state(int idx, char * err)
+{
+    lsjs_parse_error_set(idx,err);
+    ljs_parse_set_state(s_error);
 }
 static void ljs_parse_push_state(ljs_parse_state new_state)
 {
@@ -61,7 +87,7 @@ static void ljs_parse_push_state(ljs_parse_state new_state)
     else
     {
         state_idx--;
-        state_stack[state_idx]=s_error;
+        ljs_parse_set_error_state(0,"json tree too deep");
     }
     //printf("[LJS_PARSE] %s new state = %d\n",__FUNCTION__,state_stack[state_idx]);
 }
@@ -72,6 +98,7 @@ static void ljs_parse_pop_state(void)
     {
         state_idx++;
         state_stack[state_idx]=s_error;
+        ljs_parse_set_error_state(0,"state pop not possible");
     }
     //printf("[LJS_PARSE] %s new state = %d\n",__FUNCTION__,state_stack[state_idx]);
 }
@@ -189,8 +216,7 @@ static ljs_parse_type ljs_parse_get_next_element(char * msg, int * start, int* l
                     *len=end_of_number-&msg[idx];
                     return ljs_pt_number;
                 }
-                break;
-
+                return ljs_pt_other;
         }
         idx++;
     }
@@ -208,6 +234,7 @@ ljs * ljs_parse_from_string(char *in)
 
     //printf("[LJS_PARSE] %s input = %s len =%d\n",__FUNCTION__,in, (int)strlen(in));
     ljs_parse_init_state();
+    lsjs_parse_error_set(-1,"");
 
     if(!in)
     {
@@ -219,7 +246,7 @@ ljs * ljs_parse_from_string(char *in)
     {
         if (oldidx==idx)
         {
-            ljs_parse_set_state(s_error);  // for security reasons, preventing endless loop
+            ljs_parse_set_error_state(idx,"internal error");
             break;
         }
         oldidx=idx;
@@ -235,7 +262,7 @@ ljs * ljs_parse_from_string(char *in)
                         ljs_parse_push_state(s_object_key);
                         break;
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting {");
                         break;
                 }
                 break;
@@ -250,13 +277,13 @@ ljs * ljs_parse_from_string(char *in)
                         js->next=ljs_init();
                         js->next->prev=js;
                         js=js->next;
-                        js->key=malloc(len);
+                        js->key=libjson_malloc(len);
                         strncpy(js->key,&in[idx]+start,len-1);
                         idx+=start+len;
                         ljs_parse_set_state(s_object_colon);
                         break;
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting key");
                         break;
                 }
                 break;
@@ -268,7 +295,7 @@ ljs * ljs_parse_from_string(char *in)
                         ljs_parse_set_state(s_object_value);
                         break;
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting :");
                         break;
                 }
                 break;
@@ -276,7 +303,7 @@ ljs * ljs_parse_from_string(char *in)
                 switch(ljs_parse_get_next_element(&in[idx],&start,&len))
                 {
                     case ljs_pt_string:
-                        js->strVal=malloc(len);
+                        js->strVal=libjson_malloc(len);
                         strncpy(js->strVal,&in[idx]+start,len-1);
                         js->type=ljsType_string;
                         idx+=start+len;
@@ -327,7 +354,7 @@ ljs * ljs_parse_from_string(char *in)
                         ljs_parse_push_state(s_array_value);
                         break;
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting value");
                         break;
                 }
                 break;
@@ -339,11 +366,12 @@ ljs * ljs_parse_from_string(char *in)
                         idx+=start+len;
                         if (ljs_parse_get_next_element(&in[idx],&start,&len)==ljs_pt_string)
                         {
+                            printf("kkkkkkkkk");
                             ljs_parse_set_state(s_object_key);
                         }
                         else
                         {
-                            ljs_parse_set_state(s_error);
+                            ljs_parse_set_error_state(idx,"invalid format, expecting next object");
                         }
                         break;
                     case ljs_pt_obj_end:
@@ -352,7 +380,7 @@ ljs * ljs_parse_from_string(char *in)
                         break;
 
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting comma or }");
                         break;
                 }
                 break;
@@ -367,7 +395,7 @@ ljs * ljs_parse_from_string(char *in)
                     case ljs_pt_string:
                         js->next=ljs_array_create_next_index_of_null(js);
                         js=js->next;
-                        js->strVal=malloc(len);
+                        js->strVal=libjson_malloc(len);
                         strncpy(js->strVal,&in[idx]+start,len-1);
                         js->type=ljsType_string;
                         idx+=start+len;
@@ -430,7 +458,7 @@ ljs * ljs_parse_from_string(char *in)
                         ljs_parse_push_state(s_array_value);
                         break;
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting next array element");
                         break;
                 }
                 break;
@@ -445,7 +473,7 @@ ljs * ljs_parse_from_string(char *in)
                         }
                         else
                         {
-                            ljs_parse_set_state(s_error);
+                            ljs_parse_set_error_state(idx,"invalid format, expecting next element after comma");
                         }
                         break;
                     case ljs_pt_array_end:
@@ -454,21 +482,32 @@ ljs * ljs_parse_from_string(char *in)
                         break;
 
                     default:
-                        ljs_parse_set_state(s_error);
+                        ljs_parse_set_error_state(idx,"invalid format, expecting comma or ]");
                         break;
                 }
                 break;
             default:
-                ljs_parse_set_state(s_error);
+                ljs_parse_set_error_state(idx,"internal error");
         }
     }
     if((ljs_parse_get_state()==s_idle) &&(state_idx==0))
     {
-        //printf("[LJS_PARSE] %s return = %p \n",__FUNCTION__,js_start);
         return js_start;
     }
-    // todo free everything
+    ljs_parse_set_error_state(idx,"missing closing end");
     ljs_free(js_start);
-    //printf("[LJS_PARSE] %s return = NULL \n",__FUNCTION__);
     return NULL;
+}
+
+bool ljs_parse_ok(int * line, char ** err)
+{
+    if(err) 
+    {
+        *err=ljs_parse_err.info;
+    }
+    if (line)
+    {
+        *line=ljs_parse_err.line;
+    }
+    return (ljs_parse_err.line==0);
 }

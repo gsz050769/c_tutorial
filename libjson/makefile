@@ -1,4 +1,4 @@
-objects = libjson.o libjson_qual.o libjson_write.o libjson_read.o libjson_print.o libjson_free.o libjson_array.o libjson_parse.o
+objects = libjson.o libjson_qual.o libjson_write.o libjson_read.o libjson_print.o libjson_free.o libjson_array.o libjson_parse.o libjson_memory.o
 
 
 all: libjson
@@ -29,6 +29,9 @@ libjson_free.o: libjson_free.c libjson_free.h libjson.h
 
 libjson_parse.o: libjson_parse.c libjson_parse.h libjson.h
 	gcc -c libjson_parse.c
+
+libjson_memory.o: libjson_memory.c libjson_memory.h libjson.h
+	gcc -c libjson_memory.c
 
 clean:
 	rm libjson $(objects)

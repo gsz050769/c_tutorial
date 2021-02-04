@@ -28,6 +28,7 @@
 #include "libjson_write.h"
 #include "libjson_read.h"
 #include "libjson_array.h"
+#include "libjson_memory.h"
 
 char int_buf[20];
 
@@ -80,7 +81,7 @@ static ljs * ljs_write_get_element(ljs *js, ljsQualTuple tup)
 		lastljs->next=js;
 		js->prev=lastljs;
 		js->type=tup.jstype;
-        js->key=malloc(strlen(tup.key)+1);
+        js->key=libjson_malloc(strlen(tup.key)+1);
 		strcpy(js->key,tup.key);
 		return js;
 	}
@@ -117,7 +118,7 @@ int ljs_write(ljs *js, char* qual, void* val)
 						return 0;
 
 					case ljsType_string:
-						ljs_my->strVal= malloc(strlen((char*) val)+1);
+						ljs_my->strVal= libjson_malloc(strlen((char*) val)+1);
 						strcpy(ljs_my->strVal,(char*) val);
 						return 0;
 
